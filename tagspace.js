@@ -2,34 +2,34 @@
  * Draws the space.
  */
 function drawSpace() {
-	ctx.fillStyle = 'black';
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	pub.ctx.fillStyle = 'black';
+	pub.ctx.fillRect(0, 0, pub.canvas.width, pub.canvas.height);
 }
 
 /**
  * Draws the stars.
  */
 function drawStars() {
-	for(var i = 0; i < coordinates.length; i++) {
+	for(var i = 0; i < pub.coordinates.length; i++) {
 		var starSize = 0;
 		if (i % 5 == 0) starSize = 1;
 		else if (i % 3 == 0)starSize = 3;
 		else if (i % 2 == 0) starSize = 5;
 		else starSize = 6;
 
-		staticGlow = starGlows[starSize].static;
-		if (i == clickedBody) staticGlow = starGlows[starSize].selected;
-		ctx.drawImage(
-			staticGlow, 
-			(coordinates[i].x * canvas.width) - (starSize * 6.5), 
-			(coordinates[i].y * canvas.height) - (starSize * 6.5));
+		var mainGlow = pub.starGlows[starSize].main;
+		if (i == pub.clickedBody) mainGlow = pub.starGlows[starSize].selected;
+		pub.ctx.drawImage(
+			mainGlow, 
+			(pub.coordinates[i].x * pub.canvas.width) - (starSize * 6.5), 
+			(pub.coordinates[i].y * pub.canvas.height) - (starSize * 6.5));
 
 		// Main body.
-		ctx.fillStyle = '#fdfdaa';
-		ctx.beginPath();
-		ctx.arc(coordinates[i].x * canvas.width, coordinates[i].y * canvas.height, starSize, 0, Math.PI * 2, true);
-		ctx.closePath();
-		ctx.fill(); 
+		pub.ctx.fillStyle = '#fdfdaa';
+		pub.ctx.beginPath();
+		pub.ctx.arc(pub.coordinates[i].x * pub.canvas.width, pub.coordinates[i].y * pub.canvas.height, starSize, 0, Math.PI * 2, true);
+		pub.ctx.closePath();
+		pub.ctx.fill(); 
 
 		// TODO: Fix blinking.
 		/*if (Math.random() < 0.01) {
@@ -42,7 +42,7 @@ function drawStars() {
 }
 
 /**
- * Draws the star / tag labels randomly.
+ * Draws the star / tag labels (selected stars are shown in intervals).
  */
 function drawLabels() {
 	// Generate a random number per caption.
@@ -50,20 +50,20 @@ function drawLabels() {
 	// shown or not.
 	var date = new Date();
 	var now = date.getTime();
-	if (now - time.captions > 3000) {
-		for(var i = 0; i < coordinates.length; i++) {
-			r[i] = Math.random();
+	if (now - pub.time.captions > 3000) {
+		for(var i = 0; i < pub.coordinates.length; i++) {
+			pub.r[i] = Math.random();
 		}
-		time.captions = now;
+		pub.time.captions = now;
 	}
 	// Count captions shown.
 	var tagsCount = 0;
 
-	ctx.fillStyle = '#aaa';
-	ctx.font = '11px Courier';
-	for(var i = 0; i < coordinates.length; i++) {
+	pub.ctx.fillStyle = '#aaa';
+	pub.ctx.font = '11px Courier';
+	for(var i = 0; i < pub.coordinates.length; i++) {
 		// Show random and up to 10 captions.
-		if (tagsCount < 10 && r[i] > 0.6) {
+		if (tagsCount < 10 && pub.r[i] > 0.6) {
 			var starSize = 0;
 			if (i % 5 == 0) starSize = 1;
 			else if (i % 3 == 0) starSize = 3;
@@ -71,7 +71,7 @@ function drawLabels() {
 			else starSize = 6;
 
 			tagsCount++;
-			ctx.fillText('tag-' + i, starSize+3 + (coordinates[i].x * canvas.width), -starSize-3 + (coordinates[i].y * canvas.height));
+			pub.ctx.fillText('tag-' + i, starSize+3 + (pub.coordinates[i].x * pub.canvas.width), -starSize-3 + (pub.coordinates[i].y * pub.canvas.height));
 		}
 	}
 }
@@ -79,71 +79,71 @@ function drawLabels() {
 /**
  * Draws the space guy and alien images.
  *
- * TODO: Handle position updates separately.
+ * TODO: Handle animation separately.
   */
 var q = 0; var qq = 0; var qqq = 0;
 function drawImages() {
 	var date = new Date();
 	var now = date.getTime();
-	if (now - time.spaceguy > 40) {
+	if (now - pub.time.spaceguy > 40) {
 		if (++qqq / 360 == 0 && qqq > 1000) qqq = 0;
 
-		if (++q > canvas.height) {
+		if (++q > pub.canvas.height) {
 			q = 0;
 			qq += 100; 
-			if (q + qq > canvas.width) {
+			if (q + qq > pub.canvas.width) {
 				qq = 0;
 				q = 0;
 			}
 		}
-		if (q + qq > canvas.width) {
+		if (q + qq > pub.canvas.width) {
 			q = qq = 0;
 		}
-		time.spaceguy = now;
+		pub.time.spaceguy = now;
 	}
 
-	ctx.drawImage(spaceguy, qq + q, q);
-	ctx.drawImage(alienguy, canvas.width * 0.5 + (190 * Math.cos((Math.PI / 180) *  qqq) - 130 * Math.sin((Math.PI / 180) *  qqq)), canvas.height * 0.5 + (190 * Math.sin((Math.PI / 180) * qqq) +  130 * Math.cos((Math.PI / 180) * qqq)));
+	pub.ctx.drawImage(pub.spaceguy, qq + q, q);
+	pub.ctx.drawImage(pub.alienguy, pub.canvas.width * 0.5 + (190 * Math.cos((Math.PI / 180) *  qqq) - 130 * Math.sin((Math.PI / 180) *  qqq)), pub.canvas.height * 0.5 + (190 * Math.sin((Math.PI / 180) * qqq) +  130 * Math.cos((Math.PI / 180) * qqq)));
 }
 
 /**
  * Draws the planet orbits.
+ *
+ * TODO: Handle animation separately.
  */
-var orbitsPhi = [];
 function drawOrbits() {
 	var orbits = 9;
 
 	for (var i = 1; i <= orbits; i++) {
 		var x, y = 0;
 
-		if (!orbitsPhi[i]) {
-			if (i == 1) orbitsPhi[i] = Math.ceil(Math.random() * 100);
-			else orbitsPhi[i] = orbitsPhi[i - 1] + ((360 / orbits) * i - (360 / orbits)) + (Math.random() * 100);
+		if (!pub.orbitsPhi[i]) {
+			if (i == 1) pub.orbitsPhi[i] = Math.ceil(Math.random() * 100);
+			else pub.orbitsPhi[i] = pub.orbitsPhi[i - 1] + ((360 / orbits) * i - (360 / orbits)) + (Math.random() * 100);
 		}
 		
-		x = 0.5 + (i * (14 + i / 2) * Math.cos((Math.PI / 180) * orbitsPhi[i]) - i * (14 + i / 2) * Math.sin((Math.PI / 180) * orbitsPhi[i])) / canvas.width;
-		y = 0.5 + (i * (14 + i / 2) * Math.sin((Math.PI / 180) * orbitsPhi[i]) + i * (14 + i / 2) * Math.cos((Math.PI / 180) * orbitsPhi[i])) / canvas.height;
+		x = 0.5 + (i * (14 + i / 2) * Math.cos((Math.PI / 180) * pub.orbitsPhi[i]) - i * (14 + i / 2) * Math.sin((Math.PI / 180) * pub.orbitsPhi[i])) / pub.canvas.width;
+		y = 0.5 + (i * (14 + i / 2) * Math.sin((Math.PI / 180) * pub.orbitsPhi[i]) + i * (14 + i / 2) * Math.cos((Math.PI / 180) * pub.orbitsPhi[i])) / pub.canvas.height;
 
-		orbitsPhi[i] += (orbits - i + 1) * 0.02;
-		if (orbitsPhi[i] > 1000 && orbitsPhi[i] / 360 == 0) orbitsPhi[i] = 1;
+		pub.orbitsPhi[i] += (orbits - i + 1) * 0.02;
+		if (pub.orbitsPhi[i] > 1000 && pub.orbitsPhi[i] / 360 == 0) pub.orbitsPhi[i] = 1;
 		
-		ctx.fillStyle = '#0' + (orbits - i) + '0';
-		ctx.beginPath();
-		ctx.arc(x * canvas.width, y * canvas.height, i + 1, 0, Math.PI * 2, true);
-		ctx.closePath();
-		ctx.fill(); 
+		pub.ctx.fillStyle = '#0' + (orbits - i) + '0';
+		pub.ctx.beginPath();
+		pub.ctx.arc(x * pub.canvas.width, y * pub.canvas.height, i + 1, 0, Math.PI * 2, true);
+		pub.ctx.closePath();
+		pub.ctx.fill(); 
 	}
 }
 
 /**
- * Animates a sigle star when it is clicked.
+ * Animates the clicked star to the canvas center.
  */
-var starsCenterDone = false;
 function starsCenter() {
-	if (clickedBody > -1 && !starsCenterDone) {
-			starsCenterDone = easing(0.5, clickedBody);
+	if (pub.clickedBody > -1 && !pub.starsCenterDone) {
+			pub.starsCenterDone = easing(0.5, pub.clickedBody);
 	} else {
-		if (clickedBody > -1 && starsCenterDone) {
+		if (pub.clickedBody > -1 && pub.starsCenterDone) {
 			drawOrbits();
 		}
 	}
@@ -152,302 +152,46 @@ function starsCenter() {
 /**
  * Animates the non-clicked stars in circle positions.
  */
-var starsCircleDone = false;
 function starsCircle() {
-	if (clickedBody > -1 && !starsCircleDone) {
+	if (pub.clickedBody > -1 && !pub.starsCircleDone) {
 		var allDone = true;
-		for (var i = 0; i < circleCoords.length; i++) {
-			if (i !== clickedBody) {
-				if(! easing(circleCoords, i)) allDone = false;
+		for (var i = 0; i < pub.circleCoords.length; i++) {
+			if (i !== pub.clickedBody) {
+				if(! easing(pub.circleCoords, i)) allDone = false;
 			}
 		}
 
-		if (allDone == true) starsCircleDone = true;
+		if (allDone == true) pub.starsCircleDone = true;
 	}
 }
 
 /**
  * Animates the system reset.
  */
-var starsResetDone = false;
 function starsReset() {
-	if (clickedBody == -1 && !starsResetDone) {
+	if (pub.clickedBody == -1 && !pub.starsResetDone) {
 		var allDone = true;
-		for (var i = 0; i < origCoords.length; i++) {
-			if (! easing(origCoords, i)) allDone = false;
+		for (var i = 0; i < pub.origCoords.length; i++) {
+			if (! easing(pub.origCoords, i)) allDone = false;
 		}
 
-		if (allDone == true) starsResetDone = true;
+		if (allDone == true) pub.starsResetDone = true;
 	}
 }
-
-/**
- * Does simple animation easing.
- *
- * Returns true if easing is complete.
- */
-function easing(targetCoords, i) {
-	if (targetCoords instanceof Array === false) coords = {x: targetCoords, y: targetCoords};
-	else coords = targetCoords[i];
-
-	if (coordinates[i].x > coords.x - 0.01 && coordinates[i].x < coords.x + 0.01) {
-		coordinates[i].x = coords.x;
-	} else if (coordinates[i].x > coords.x) {
-		if (coordinates[i].x - coords.x < 0.1) {
-			coordinates[i].x -= 0.003;
-		} else {
-			coordinates[i].x -= 0.01;
-		}
-	} else if (coordinates[i].x < coords.x) {
-		if (coords.x - coordinates[i].x < 0.1) {
-			coordinates[i].x += 0.003;
-		} else {
-			coordinates[i].x += 0.01;
-		}
-	}
-	if (coordinates[i].y > coords.y - 0.01 && coordinates[i].y < coords.y + 0.01) {
-		coordinates[i].y = coords.y;
-	} else if (coordinates[i].y > coords.y) {
-		if (coordinates[i].y - coords.y < 0.1) {
-			coordinates[i].y -= 0.003;
-		} else {
-			coordinates[i].y -= 0.01;
-		}
-	} else if (coordinates[i].y < coords.y) {
-		if (coords.y - coordinates[i].y < 0.1) {
-			coordinates[i].y += 0.003;
-		} else {
-			coordinates[i].y += 0.01;
-		}
-	}
-
-	if (coordinates[i].x == coords.x && coordinates[i].y == coords.y) return true;
-
-	return false;
-}
-
-function render() {
-	requestAnimationFrame(render);
-	animate();
-}
-
-function animate() {
-	drawSpace();
-
-	starsHover();
-	starsReset();
-	starsCenter();
-	starsCircle();
-		
-	drawStars();
-	drawLabels();
-	drawImages();
-
-	fps.update();
-}
-
-/************************************************/
-/***************** Init area ********************/
-/************************************************/
-
-// Test data (not used yet).
-var tags = [
-	{'tag1':
-		['art1','art1','art1','art1','art1','art1']
-	},
-	{'tag2':
-		['art1','art1','art1','art1']
-	},
-	{'tag3':
-		['art1','art1']
-	},
-	{'tag4':
-		['art1','art1','art1','art1','art1']
-	},
-	{'tag5':
-		['art1']
-	}
-];
-
-// Frames per second stats.
-fps = new Stats();
-fps.domElement.id = 'fps-stats';
-fps.domElement.style.position = 'absolute';
-fps.domElement.style.top = '0';
-fps.domElement.style.right = '0';
-fps.domElement.style.zIndex = 100;
-document.getElementById('body').appendChild(fps.domElement);
-
-// Time references.
-var date = new Date();
-var time = {};
-
-// The 2D canvas and context.
-var canvas = document.getElementById('tagspace');
-var ctx = canvas.getContext('2d');
-
-// The helper canvas and context.
-var hcanvas = document.getElementById('hcanvas');
-var hctx = hcanvas.getContext('2d');
-
-// Generate the glows.
-var starSizes = [1, 3, 5, 6];
-var starGlows = []
-for (var i = 0; i < starSizes.length; i++) {
-	hcanvas.width = starSizes[i] * 6.5 * 2;
-	hcanvas.height = starSizes[i] * 6.5 * 2;
-	hctx.canvas.width = starSizes[i] * 6.5 * 2;
-	hctx.canvas.height = starSizes[i] * 6.5 * 2;
-	hcanvas.style.background = 'transparent';
-
-	starGlows[starSizes[i]] = {};
-
-	var sgColor = '#222';
-	var glow = ctx.createRadialGradient(
-		0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i], 
-		0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i] * 6.5);
-	glow.addColorStop(0, sgColor);
-	glow.addColorStop(1, 'transparent');
-	hctx.fillStyle = glow;
-	hctx.beginPath();
-	hctx.arc(0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i] * 6.5, 0, Math.PI * 2, true);
-	hctx.closePath();
-	hctx.fill();
-
-	var img = new Image();
-	img.src = hcanvas.toDataURL();
-	starGlows[starSizes[i]].static = img;
-
-	hctx.canvas.width = hctx.canvas.width;
-	
-	sgColor = '#f00';
-	glow = ctx.createRadialGradient(
-		0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i], 
-		0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i] * 6.5);
-	glow.addColorStop(0, sgColor);
-	glow.addColorStop(1, 'transparent');
-	hctx.fillStyle = glow;
-	hctx.beginPath();
-	hctx.arc(0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i] * 6.5, 0, Math.PI * 2, true);
-	hctx.closePath();
-	hctx.fill();
-
-	img = new Image();
-	img.src = hcanvas.toDataURL();
-	starGlows[starSizes[i]].selected = img;
-
-	hcanvas.width = starSizes[i] * 1.8 * 2;
-	hcanvas.height = starSizes[i] * 1.8 * 2;
-	hctx.canvas.width = starSizes[i] * 1.8 * 2;
-	hctx.canvas.height = starSizes[i] * 1.8 * 2;
-	hcanvas.style.background = 'transparent';
-
-	var o = 1.8 * starSizes[i];
-	glow = hctx.createRadialGradient(
-		0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i], 
-		0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i], o);
-	glow.addColorStop(0, '#000');
-	glow.addColorStop(1, '#000');
-	hctx.fillStyle = glow;
-	hctx.beginPath();
-	hctx.arc(0.5 * hctx.canvas.width, 0.5 * hctx.canvas.height, starSizes[i], o, 0, Math.PI * 2, true);
-	hctx.closePath();
-	hctx.fill();
-
-	img = new Image();
-	img.src = hcanvas.toDataURL();
-	starGlows[starSizes[i]].blink = img;
-}
-hctx.canvas.width = hctx.canvas.height = 1;
-
-// Instantiate the images.
-var spaceguy = new Image();
-spaceguy.src = 'spaceguy.png';
-var alienguy = new Image();
-alienguy.src = 'alienguy.png';
-
-// The calculated canvas element offsets.
-var offsetLeft = 0;
-var offsetTop = 0;
-
-// Mouse coordinates and mousedown flag.
-var mouse = {x: 0, y: 0};
-var mouseDown = false;			
-
-// Mouse state events.
-canvas.onmousemove = function (e) {
-	e.preventDefault();
-
-	mouse.x = e.clientX - offsetLeft + document.body.scrollLeft;
-	mouse.y = e.clientY - offsetTop + document.body.scrollTop;
-};
-canvas.onmousedown = function (e) {
-	e.preventDefault();
-	e.stopPropagation();
-
-	mouseDown = !mouseDown;
-};
-canvas.onmouseup = function (e) {
-	e.preventDefault();
-	e.stopPropagation();
-
-	mouseDown = !mouseDown;
-
-	bodyClicks();
-};
-
-// Key up handler.
-// 1- On [enter] key press we reset the system.
-document.onkeyup = function (e) {
-	if (e.keyCode === 13) {
-		e.preventDefault();
-		e.stopPropagation();
-
-		// No star is clicked.
-		clickedBody = -1;
-		starsResetDone = false;
-		orbitsPhi = [];
-	}
-}
-
-// The original star coordinates. Used to reset the system.
-var origCoords = generateStarCoords(30);
-
-// The circle position start coordinates.
-var circleCoords = generateCircleCoords(30 - 1);
-
-// The real star coordinates. We copy the original -
-// coordinates to start with.
-var coordinates = [];
-for(var f = 0; f < origCoords.length; f++) {
-	coordinates[f] = {};
-	coordinates[f].x = origCoords[f].x;
-	coordinates[f].y = origCoords[f].y;
-}
-
-var star = [];
-time.captions = date.getTime();
-time.spaceguy = date.getTime();
-var r = [];
-for(var i = 0; i < coordinates.length; i++) {
-	r[i] = Math.random();
-}
-render();
 
 /**
  * Checks if a star has been clicked.
  */
-var clickedBody = -1;
 function bodyClicks() {
-	for(var i = 0; i < coordinates.length; i++) {
-		if (coordinates[i].x * canvas.width > mouse.x - 10 &&
-			coordinates[i].x * canvas.width < mouse.x + 10 &&
-			coordinates[i].y * canvas.height > mouse.y - 10 &&
-			coordinates[i].y * canvas.height < mouse.y + 10) 
+	for(var i = 0; i < pub.coordinates.length; i++) {
+		if (pub.coordinates[i].x * pub.canvas.width > pub.mouse.x - 10 &&
+			pub.coordinates[i].x * pub.canvas.width < pub.mouse.x + 10 &&
+			pub.coordinates[i].y * pub.canvas.height > pub.mouse.y - 10 &&
+			pub.coordinates[i].y * pub.canvas.height < pub.mouse.y + 10) 
 		{
-			clickedBody = i;
-			starsCircleDone = false;
-			starsCenterDone = false;
+			pub.clickedBody = i;
+			pub.starsCircleDone = false;
+			pub.starsCenterDone = false;
 
 			break;
 		}
@@ -460,11 +204,11 @@ function bodyClicks() {
 function starsHover() {
 	var hover = false;
 
-	for(var i = 0; i < coordinates.length; i++) {
-		if (coordinates[i].x * canvas.width > mouse.x - 10 &&
-			coordinates[i].x * canvas.width < mouse.x + 10 &&
-			coordinates[i].y * canvas.height > mouse.y - 10 &&
-			coordinates[i].y * canvas.height < mouse.y + 10) 
+	for(var i = 0; i < pub.coordinates.length; i++) {
+		if (pub.coordinates[i].x * pub.canvas.width > pub.mouse.x - 10 &&
+			pub.coordinates[i].x * pub.canvas.width < pub.mouse.x + 10 &&
+			pub.coordinates[i].y * pub.canvas.height > pub.mouse.y - 10 &&
+			pub.coordinates[i].y * pub.canvas.height < pub.mouse.y + 10) 
 		{
 			hover = true;
 
@@ -472,7 +216,127 @@ function starsHover() {
 		}
 	}
 	
-	if (hover) canvas.style.cursor = 'pointer'; else canvas.style.cursor = 'default';
+	if (hover) pub.canvas.style.cursor = 'pointer'; else pub.canvas.style.cursor = 'default';
+}
+
+/**
+ * Does simple animation easing.
+ *
+ * Returns true if easing is complete.
+ *
+ * TODO: Should probably use a library for this.
+ */
+function easing(targetCoords, i) {
+	if (targetCoords instanceof Array === false) coords = {x: targetCoords, y: targetCoords};
+	else coords = targetCoords[i];
+
+	if (pub.coordinates[i].x > coords.x - 0.01 && pub.coordinates[i].x < coords.x + 0.01) {
+		pub.coordinates[i].x = coords.x;
+	} else if (pub.coordinates[i].x > coords.x) {
+		if (pub.coordinates[i].x - coords.x < 0.1) {
+			pub.coordinates[i].x -= 0.003;
+		} else {
+			pub.coordinates[i].x -= 0.01;
+		}
+	} else if (pub.coordinates[i].x < coords.x) {
+		if (coords.x - pub.coordinates[i].x < 0.1) {
+			pub.coordinates[i].x += 0.003;
+		} else {
+			pub.coordinates[i].x += 0.01;
+		}
+	}
+	if (pub.coordinates[i].y > coords.y - 0.01 && pub.coordinates[i].y < coords.y + 0.01) {
+		pub.coordinates[i].y = coords.y;
+	} else if (pub.coordinates[i].y > coords.y) {
+		if (pub.coordinates[i].y - coords.y < 0.1) {
+			pub.coordinates[i].y -= 0.003;
+		} else {
+			pub.coordinates[i].y -= 0.01;
+		}
+	} else if (pub.coordinates[i].y < coords.y) {
+		if (coords.y - pub.coordinates[i].y < 0.1) {
+			pub.coordinates[i].y += 0.003;
+		} else {
+			pub.coordinates[i].y += 0.01;
+		}
+	}
+
+	if (pub.coordinates[i].x == coords.x && pub.coordinates[i].y == coords.y) return true;
+
+	return false;
+}
+
+function render() {
+	requestAnimationFrame(render);
+	animate();
+}
+
+function animate() {
+	starsHover();
+	starsReset();
+	starsCenter();
+	starsCircle();
+		
+	drawSpace();
+	drawStars();
+	drawLabels();
+	drawImages();
+
+	pub.fps.update();
+}
+
+/************************************************/
+/***************** Init area ********************/
+/************************************************/
+
+/**
+ * Public variable container.
+ */
+var pub = {
+	clickedBody: -1,
+	starsResetDone: false,
+	starsCircleDone: false,
+	orbitsPhi: [],
+	starsCenterDone: false,
+};
+
+/**
+ * The tag class.
+ */
+function tag(options) {
+	if (options && options.name && options.total && options.articles && options.weight) {
+		this.name = options.name;
+		this.total = options.total;
+		this.articles = options.articles;
+		this.weight = options.weight;
+	} else {
+		this.name = '';
+		this.total = 0;
+		this.articles = [];
+		this.weight = 0;
+	}
+}
+/**
+ * The article class.
+ */
+function article(options) {
+	if (options && options.name && options.link && options.weight) {
+		this.name = options.name;
+		this.link = options.link;
+		this.weight = options.weight;
+	} else {
+		this.name = '';
+		this.link = '#';
+		this.weight = 0;
+	}
+}
+/**
+ * Instantiate and associate article and tag objects from input.
+ *
+ * TODO: Implement this.
+ */
+function factory() {
+
 }
 
 /**
@@ -484,8 +348,8 @@ function starsHover() {
  */
 function generateStarCoords(tagCount) {
 	var coordinates = [];
-	var dx = 12 / canvas.width ;
-	var dy = 12 / canvas.height;
+	var dx = 12 / pub.canvas.width ;
+	var dy = 12 / pub.canvas.height;
 
 	for(var i = 0; i < tagCount; i++) {
 		var x = Math.random();
@@ -534,22 +398,194 @@ function generateCircleCoords(tagCountM1) {
 		}
 
 		coordinates[i] = {};
-		coordinates[i].x = 0.5 + (140 * Math.cos((Math.PI / 180) * phi) - 190 * Math.sin((Math.PI / 180) * phi)) / canvas.width;
-		coordinates[i].y = 0.5 + (140 * Math.sin((Math.PI / 180) * phi) + 190 * Math.cos((Math.PI / 180) * phi)) / canvas.height;
+		coordinates[i].x = 0.5 + (140 * Math.cos((Math.PI / 180) * phi) - 190 * Math.sin((Math.PI / 180) * phi)) / pub.canvas.width;
+		coordinates[i].y = 0.5 + (140 * Math.sin((Math.PI / 180) * phi) + 190 * Math.cos((Math.PI / 180) * phi)) / pub.canvas.height;
 	}
 
 	return coordinates;
 }
 
 /**
- * Calculates the canvas offset left and top.
- * This helps when selecting a star.
- */ 
-window.onload = function() {
-	var tmpEl = canvas;
+ * Initialize everything and then start rendering.
+ */
+function init() {
+	// Frames per second stats.
+	pub.fps = new Stats();
+	pub.fps.domElement.id = 'fps-stats';
+	pub.fps.domElement.style.position = 'absolute';
+	pub.fps.domElement.style.top = '0';
+	pub.fps.domElement.style.right = '0';
+	pub.fps.domElement.style.zIndex = 100;
+	document.getElementById('body').appendChild(pub.fps.domElement);
+
+	// Time references.
+	var date = new Date();
+	pub.time = {};
+
+	// The 2D canvas and context.
+	pub.canvas = document.getElementById('tagspace');
+	pub.ctx = pub.canvas.getContext('2d');
+
+	// The helper canvas and context.
+	pub.hcanvas = document.getElementById('hcanvas');
+	pub.hctx = pub.hcanvas.getContext('2d');
+
+	// Generate the glows.
+	var starSizes = [1, 3, 5, 6];
+	pub.starGlows = []
+	for (var i = 0; i < starSizes.length; i++) {
+		pub.hcanvas.width = starSizes[i] * 6.5 * 2;
+		pub.hcanvas.height = starSizes[i] * 6.5 * 2;
+		pub.hctx.canvas.width = starSizes[i] * 6.5 * 2;
+		pub.hctx.canvas.height = starSizes[i] * 6.5 * 2;
+		pub.hcanvas.style.background = 'transparent';
+
+		pub.starGlows[starSizes[i]] = {};
+
+		var sgColor = '#222';
+		var glow = pub.hctx.createRadialGradient(
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], 
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5);
+		glow.addColorStop(0, sgColor);
+		glow.addColorStop(1, 'transparent');
+		pub.hctx.fillStyle = glow;
+		pub.hctx.beginPath();
+		pub.hctx.arc(0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5, 0, Math.PI * 2, true);
+		pub.hctx.closePath();
+		pub.hctx.fill();
+
+		var img = new Image();
+		img.src = pub.hcanvas.toDataURL();
+		pub.starGlows[starSizes[i]].main = img;
+
+		pub.hctx.canvas.width = pub.hctx.canvas.width;
+		
+		sgColor = '#f00';
+		glow = pub.hctx.createRadialGradient(
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], 
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5);
+		glow.addColorStop(0, sgColor);
+		glow.addColorStop(1, 'transparent');
+		pub.hctx.fillStyle = glow;
+		pub.hctx.beginPath();
+		pub.hctx.arc(0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5, 0, Math.PI * 2, true);
+		pub.hctx.closePath();
+		pub.hctx.fill();
+
+		img = new Image();
+		img.src = pub.hcanvas.toDataURL();
+		pub.starGlows[starSizes[i]].selected = img;
+
+		pub.hcanvas.width = starSizes[i] * 1.8 * 2;
+		pub.hcanvas.height = starSizes[i] * 1.8 * 2;
+		pub.hctx.canvas.width = starSizes[i] * 1.8 * 2;
+		pub.hctx.canvas.height = starSizes[i] * 1.8 * 2;
+		pub.hcanvas.style.background = 'transparent';
+
+		var o = 1.8 * starSizes[i];
+		glow = pub.hctx.createRadialGradient(
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], 
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], o);
+		glow.addColorStop(0, '#000');
+		glow.addColorStop(1, '#000');
+		pub.hctx.fillStyle = glow;
+		pub.hctx.beginPath();
+		pub.hctx.arc(0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], o, 0, Math.PI * 2, true);
+		pub.hctx.closePath();
+		pub.hctx.fill();
+
+		img = new Image();
+		img.src = pub.hcanvas.toDataURL();
+		pub.starGlows[starSizes[i]].blink = img;
+	}
+	pub.hctx.canvas.width = pub.hctx.canvas.height = 1;
+
+	// Instantiate the images.
+	pub.spaceguy = new Image();
+	pub.spaceguy.src = 'spaceguy.png';
+	pub.alienguy = new Image();
+	pub.alienguy.src = 'alienguy.png';
+
+	// The calculated canvas element offsets.
+	pub.offsetLeft = 0;
+	pub.offsetTop = 0;
+
+	// Calculates the canvas offset left and top.
+	// This helps when selecting a star.
+	var tmpEl = pub.canvas;
 	while (tmpEl instanceof HTMLBodyElement === false) {
-		offsetLeft += tmpEl.offsetLeft;
-		offsetTop += tmpEl.offsetTop;
+		pub.offsetLeft += tmpEl.offsetLeft;
+		pub.offsetTop += tmpEl.offsetTop;
 		tmpEl = tmpEl.offsetParent;
 	}
+
+	// Mouse coordinates and mousedown flag.
+	pub.mouse = {x: 0, y: 0};
+	pub.mouseDown = false;			
+
+	// Mouse state events.
+	pub.canvas.onmousemove = function (e) {
+		e.preventDefault();
+
+		pub.mouse.x = e.clientX - pub.offsetLeft + document.body.scrollLeft;
+		pub.mouse.y = e.clientY - pub.offsetTop + document.body.scrollTop;
+	};
+	pub.canvas.onmousedown = function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+
+		pub.mouseDown = !pub.mouseDown;
+	};
+	pub.canvas.onmouseup = function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+
+		pub.mouseDown = !pub.mouseDown;
+
+		bodyClicks();
+	};
+
+	// Key up handler.
+	// 1- On [enter] key press we reset the system.
+	document.onkeyup = function (e) {
+		if (e.keyCode === 13) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			// No star is clicked.
+			pub.clickedBody = -1;
+			pub.starsResetDone = false;
+			pub.orbitsPhi = [];
+		}
+	}
+
+	// The original star coordinates. Used to reset the system.
+	pub.origCoords = generateStarCoords(30);
+
+	// The circle position start coordinates.
+	pub.circleCoords = generateCircleCoords(30 - 1);
+
+	// The real star coordinates. We copy the original -
+	// coordinates to start with.
+	pub.coordinates = [];
+	for(var f = 0; f < pub.origCoords.length; f++) {
+		pub.coordinates[f] = {};
+		pub.coordinates[f].x = pub.origCoords[f].x;
+		pub.coordinates[f].y = pub.origCoords[f].y;
+	}
+
+	pub.time.captions = date.getTime();
+	pub.time.spaceguy = date.getTime();
+	pub.r = [];
+	for(var i = 0; i < pub.coordinates.length; i++) {
+		pub.r[i] = Math.random();
+	}
+	render();
+}
+
+/**
+ * When page completes loading.
+ */
+window.onload = function() {
+	init();
 };
