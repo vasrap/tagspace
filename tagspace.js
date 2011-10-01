@@ -10,11 +10,11 @@ function drawSpace() {
  * Draws the stars.
  */
 function drawStars() {
-	for(var i = 0; i < pub.coordinates.length; i++) {
+	for(var i = 0; i < pub.tags.length; i++) {
 		var starSize = 0;
-		if (i % 5 == 0) starSize = 1;
-		else if (i % 3 == 0)starSize = 3;
-		else if (i % 2 == 0) starSize = 5;
+		if (pub.tags[i].weight  == 1) starSize = 1;
+		else if (pub.tags[i].weight  == 2)starSize = 3;
+		else if (pub.tags[i].weight  == 3) starSize = 5;
 		else starSize = 6;
 
 		var mainGlow = pub.starGlows[starSize].main;
@@ -22,12 +22,17 @@ function drawStars() {
 		pub.ctx.drawImage(
 			mainGlow, 
 			(pub.coordinates[i].x * pub.canvas.width) - (starSize * 6.5), 
-			(pub.coordinates[i].y * pub.canvas.height) - (starSize * 6.5));
+			(pub.coordinates[i].y * pub.canvas.height) - (starSize * 6.5)
+		);
 
 		// Main body.
 		pub.ctx.fillStyle = '#fdfdaa';
 		pub.ctx.beginPath();
-		pub.ctx.arc(pub.coordinates[i].x * pub.canvas.width, pub.coordinates[i].y * pub.canvas.height, starSize, 0, Math.PI * 2, true);
+		pub.ctx.arc(
+			pub.coordinates[i].x * pub.canvas.width, 
+			pub.coordinates[i].y * pub.canvas.height, 
+			starSize, 0, Math.PI * 2, true
+		);
 		pub.ctx.closePath();
 		pub.ctx.fill(); 
 
@@ -36,7 +41,8 @@ function drawStars() {
 			ctx.drawImage(
 				starGlows[starSize].blink, 
 				(coordinates[i].x * canvas.width) - (starSize * 1.8), 
-				(coordinates[i].y * canvas.height) - (starSize * 1.8));
+				(coordinates[i].y * canvas.height) - (starSize * 1.8)
+			);
 		}*/
 	}
 }
@@ -44,7 +50,7 @@ function drawStars() {
 /**
  * Draws the star / tag labels (selected stars are shown in intervals).
  */
-function drawLabels() {
+function drawStarLabels() {
 	// Generate a random number per caption.
 	// To be used as a criteria for the caption to be -
 	// shown or not.
@@ -59,19 +65,32 @@ function drawLabels() {
 	// Count captions shown.
 	var tagsCount = 0;
 
-	pub.ctx.fillStyle = '#aaa';
-	pub.ctx.font = '11px Courier';
-	for(var i = 0; i < pub.coordinates.length; i++) {
+	for(var i = 0; i < pub.tags.length; i++) {
 		// Show random and up to 10 captions.
-		if (tagsCount < 10 && pub.r[i] > 0.6) {
+		if ((tagsCount < pub.labelNum && pub.r[i] > 0.6) || (pub.hoveredBody == i)) {
 			var starSize = 0;
-			if (i % 5 == 0) starSize = 1;
-			else if (i % 3 == 0) starSize = 3;
-			else if (i % 2 == 0) starSize = 5;
+			if (pub.tags[i].weight  == 1) starSize = 1;
+			else if (pub.tags[i].weight  == 2)starSize = 3;
+			else if (pub.tags[i].weight  == 3) starSize = 5;
 			else starSize = 6;
 
+			var tagLabel = pub.tags[i].name + ' (' + pub.tags[i].total + ')';
+			
+			pub.ctx.fillStyle = '#0d0';
+			pub.ctx.font = '12px Courier';
+			var coords = pub.coordinates[i];
+			if (i == pub.hoveredBody) {
+				pub.ctx.fillStyle = '#0f0';
+				pub.ctx.font = 'bold ' + pub.ctx.font;
+				coords = {x: pub.mouse.x / pub.canvas.width, y: pub.mouse.y / pub.canvas.height};
+			}
+
 			tagsCount++;
-			pub.ctx.fillText('tag-' + i, starSize+3 + (pub.coordinates[i].x * pub.canvas.width), -starSize-3 + (pub.coordinates[i].y * pub.canvas.height));
+			pub.ctx.fillText(
+				tagLabel, 
+				starSize + 3 + (coords.x * pub.canvas.width), 
+				-starSize - 3 + (coords.y * pub.canvas.height)
+			);
 		}
 	}
 }
@@ -103,36 +122,81 @@ function drawImages() {
 	}
 
 	pub.ctx.drawImage(pub.spaceguy, qq + q, q);
-	pub.ctx.drawImage(pub.alienguy, pub.canvas.width * 0.5 + (190 * Math.cos((Math.PI / 180) *  qqq) - 130 * Math.sin((Math.PI / 180) *  qqq)), pub.canvas.height * 0.5 + (190 * Math.sin((Math.PI / 180) * qqq) +  130 * Math.cos((Math.PI / 180) * qqq)));
+	pub.ctx.drawImage(
+		pub.alienguy,
+	       	pub.canvas.width * 0.5 + (190 * Math.cos((Math.PI / 180) *  qqq) - 130 * Math.sin((Math.PI / 180) *  qqq)), 
+		pub.canvas.height * 0.5 + (190 * Math.sin((Math.PI / 180) * qqq) +  130 * Math.cos((Math.PI / 180) * qqq))
+	);
 }
 
 /**
  * Draws the planet orbits.
  *
  * TODO: Handle animation separately.
+ * TODO: Handle labels separately.
  */
 function drawOrbits() {
-	var orbits = 9;
+	if (pub.clickedBody > -1 && pub.starsCenterDone) {
+		var articles = pub.tags[pub.clickedBody].articles; 
+		var orbits = articles.length;
 
-	for (var i = 1; i <= orbits; i++) {
-		var x, y = 0;
+		for (var i = 1; i <= orbits; i++) {
+			var step = 9 / orbits * Math.ceil(pub.orbitR + i / 2);
+			var x, y = 0;
 
-		if (!pub.orbitsPhi[i]) {
-			if (i == 1) pub.orbitsPhi[i] = Math.ceil(Math.random() * 100);
-			else pub.orbitsPhi[i] = pub.orbitsPhi[i - 1] + ((360 / orbits) * i - (360 / orbits)) + (Math.random() * 100);
+			if (!pub.orbitsPhi[i]) {
+				if (i == 1) pub.orbitsPhi[i] = Math.ceil(Math.random() * 100);
+				else pub.orbitsPhi[i] = 
+					pub.orbitsPhi[i - 1] + ((360 / orbits) * i - (360 / orbits)) + (Math.random() * 100);
+			}
+			
+
+			if (! pub.orbitCoords[i])
+				pub.orbitCoords[i] = {};
+
+			x = pub.orbitCoords[i].x = 
+				0.5 + 
+				(i * (step) * Math.cos((Math.PI / 180) * pub.orbitsPhi[i]) -
+				 i * (step) * Math.sin((Math.PI / 180) * pub.orbitsPhi[i])) 
+				/ pub.canvas.width;
+			y = pub.orbitCoords[i].y =
+			       0.5 + 
+			       (i * (step) * Math.sin((Math.PI / 180) * pub.orbitsPhi[i]) + 
+				i * (step) * Math.cos((Math.PI / 180) * pub.orbitsPhi[i])) 
+			       / pub.canvas.height;
+
+			pub.orbitsPhi[i] += (9 - i + 1) * 0.02;
+			if (pub.orbitsPhi[i] > 1000 && pub.orbitsPhi[i] / 360 == 0) 
+				pub.orbitsPhi[i] = 1;
+			
+			pub.ctx.fillStyle = '#0' + (9 - i + 1) + '0';
+			pub.ctx.beginPath();
+			pub.ctx.arc(x * pub.canvas.width, y * pub.canvas.height, i + 1, 0, Math.PI * 2, true);
+			pub.ctx.closePath();
+			pub.ctx.fill(); 
 		}
-		
-		x = 0.5 + (i * (14 + i / 2) * Math.cos((Math.PI / 180) * pub.orbitsPhi[i]) - i * (14 + i / 2) * Math.sin((Math.PI / 180) * pub.orbitsPhi[i])) / pub.canvas.width;
-		y = 0.5 + (i * (14 + i / 2) * Math.sin((Math.PI / 180) * pub.orbitsPhi[i]) + i * (14 + i / 2) * Math.cos((Math.PI / 180) * pub.orbitsPhi[i])) / pub.canvas.height;
 
-		pub.orbitsPhi[i] += (orbits - i + 1) * 0.02;
-		if (pub.orbitsPhi[i] > 1000 && pub.orbitsPhi[i] / 360 == 0) pub.orbitsPhi[i] = 1;
-		
-		pub.ctx.fillStyle = '#0' + (orbits - i) + '0';
-		pub.ctx.beginPath();
-		pub.ctx.arc(x * pub.canvas.width, y * pub.canvas.height, i + 1, 0, Math.PI * 2, true);
-		pub.ctx.closePath();
-		pub.ctx.fill(); 
+		for (var i = 1; i <= orbits; i++) {
+			var orbitLabel = articles[i - 1].name;
+			
+			pub.ctx.fillStyle = '#ccc';
+			pub.ctx.font = '12px Courier';
+			x = pub.orbitCoords[i].x;
+			y = pub.orbitCoords[i].y;
+			if (i == pub.hoveredOrbit) {
+				pub.ctx.fillStyle = '#fff';
+				pub.ctx.font = 'bold 13px Courier';
+				x = pub.mouse.x / pub.canvas.width;
+				y = pub.mouse.y / pub.canvas.height;
+			}
+
+
+			pub.ctx.fillText(
+				orbitLabel, 
+				5 + 3 + (x * pub.canvas.width), 
+				-5 - 3 + (y * pub.canvas.height)
+			);
+		}
 	}
 }
 
@@ -142,10 +206,6 @@ function drawOrbits() {
 function starsCenter() {
 	if (pub.clickedBody > -1 && !pub.starsCenterDone) {
 			pub.starsCenterDone = easing(0.5, pub.clickedBody);
-	} else {
-		if (pub.clickedBody > -1 && pub.starsCenterDone) {
-			drawOrbits();
-		}
 	}
 }
 
@@ -182,19 +242,13 @@ function starsReset() {
 /**
  * Checks if a star has been clicked.
  */
-function bodyClicks() {
-	for(var i = 0; i < pub.coordinates.length; i++) {
-		if (pub.coordinates[i].x * pub.canvas.width > pub.mouse.x - 10 &&
-			pub.coordinates[i].x * pub.canvas.width < pub.mouse.x + 10 &&
-			pub.coordinates[i].y * pub.canvas.height > pub.mouse.y - 10 &&
-			pub.coordinates[i].y * pub.canvas.height < pub.mouse.y + 10) 
-		{
-			pub.clickedBody = i;
-			pub.starsCircleDone = false;
-			pub.starsCenterDone = false;
-
-			break;
-		}
+function starsClick() {
+	if (pub.hoveredBody > -1) {
+		pub.clickedBody = pub.hoveredBody;
+		pub.starsCircleDone = false;
+		pub.starsCenterDone = false;
+		pub.orbitsPhi = [];
+		pub.orbitCoords = [];
 	}
 }
 
@@ -204,6 +258,7 @@ function bodyClicks() {
 function starsHover() {
 	var hover = false;
 
+	pub.hoveredBody = -1;
 	for(var i = 0; i < pub.coordinates.length; i++) {
 		if (pub.coordinates[i].x * pub.canvas.width > pub.mouse.x - 10 &&
 			pub.coordinates[i].x * pub.canvas.width < pub.mouse.x + 10 &&
@@ -211,12 +266,50 @@ function starsHover() {
 			pub.coordinates[i].y * pub.canvas.height < pub.mouse.y + 10) 
 		{
 			hover = true;
+			pub.hoveredBody = i;
 
 			break;
 		}
 	}
 	
 	if (hover) pub.canvas.style.cursor = 'pointer'; else pub.canvas.style.cursor = 'default';
+
+	return hover;
+}
+
+/**
+ * Checks if an orbit has been clicked.
+ */
+function orbitsClick() {
+	if (pub.hoveredOrbit > -1) {
+		window.location = pub.tags[pub.clickedBody].articles[pub.hoveredOrbit - 1].link;
+	}
+}
+
+/**
+ * Check if an orbit is hovered.
+ */
+function orbitsHover() {
+	var hover = false;
+
+	pub.hoveredOrbit = -1;
+	for(var i = 0; i < pub.orbitCoords.length; i++) {
+		if (pub.orbitCoords[i] &&
+			pub.orbitCoords[i].x * pub.canvas.width > pub.mouse.x - 10 &&
+			pub.orbitCoords[i].x * pub.canvas.width < pub.mouse.x + 10 &&
+			pub.orbitCoords[i].y * pub.canvas.height > pub.mouse.y - 10 &&
+			pub.orbitCoords[i].y * pub.canvas.height < pub.mouse.y + 10) 
+		{
+			hover = true;
+			pub.hoveredOrbit = i;
+
+			break;
+		}
+	}
+	
+	if (hover) pub.canvas.style.cursor = 'pointer'; else pub.canvas.style.cursor = 'default';
+
+	return hover;
 }
 
 /**
@@ -272,15 +365,16 @@ function render() {
 }
 
 function animate() {
-	starsHover();
+	if (! starsHover()) orbitsHover();
 	starsReset();
 	starsCenter();
 	starsCircle();
 		
 	drawSpace();
 	drawStars();
-	drawLabels();
+	drawStarLabels();
 	drawImages();
+	drawOrbits();
 
 	pub.fps.update();
 }
@@ -293,10 +387,19 @@ function animate() {
  * Public variable container.
  */
 var pub = {
+	starSizes: [1, 3, 5, 6],
+	orbitR: 10,
+	labelNum: 5,
+	mainGlowModifier: 6.5,
+	blinkGlowModifier: 1.8,
+	tags: [],
 	clickedBody: -1,
+	hoveredBody: -1,
+	hoveredOrbit: -1,
 	starsResetDone: false,
 	starsCircleDone: false,
 	orbitsPhi: [],
+	orbitCoords: [],
 	starsCenterDone: false,
 };
 
@@ -333,10 +436,33 @@ function article(options) {
 /**
  * Instantiate and associate article and tag objects from input.
  *
- * TODO: Implement this.
+ * TODO: Add articles properly.
  */
-function factory() {
+function factory(tags) {
+	for (var i = 0; i < tags.length && i < 30; i++) {
+		pub.tags[i] = new tag(tags[i]);
+	}
+}
+function generator(num) {
+	for (var i = 0; i < num && i < 30; i++) {
+		var numArticles = Math.ceil(Math.random() * 10);
+		var articles = [];
 
+		for (var k = 0; k < numArticles && k < 9; k++) {
+			articles[k] = new article({
+				name: 'article-' + k,
+				link: '#' + k,
+				weight: k + 1
+			});
+		}
+
+		pub.tags[i] = new tag({
+			name: 'tag-' + i,
+			total: Math.ceil(Math.random() * 100),
+			articles: articles,
+			weight: Math.ceil(Math.random() * 4)
+		});
+	}
 }
 
 /**
@@ -344,12 +470,13 @@ function factory() {
  *
  * TODO: Use better algorithm.
  * TODO: Fit more stars.
- * TODO: Remove hardcoded values.
  */
 function generateStarCoords(tagCount) {
 	var coordinates = [];
-	var dx = 12 / pub.canvas.width ;
-	var dy = 12 / pub.canvas.height;
+	
+	var padding = Math.max.apply(Math, pub.starSizes) * 2;
+	var dx = padding / pub.canvas.width ;
+	var dy = padding / pub.canvas.height;
 
 	for(var i = 0; i < tagCount; i++) {
 		var x = Math.random();
@@ -382,8 +509,6 @@ function generateStarCoords(tagCount) {
 /**
  * Generates the circle coordinates for the stars.
  * Used for when a star is selected.
- *
- * TODO: Remove hardcoded values.
  */
 function generateCircleCoords(tagCountM1) {
 	var side1Count = Math.ceil(tagCountM1 / 2);
@@ -398,8 +523,16 @@ function generateCircleCoords(tagCountM1) {
 		}
 
 		coordinates[i] = {};
-		coordinates[i].x = 0.5 + (140 * Math.cos((Math.PI / 180) * phi) - 190 * Math.sin((Math.PI / 180) * phi)) / pub.canvas.width;
-		coordinates[i].y = 0.5 + (140 * Math.sin((Math.PI / 180) * phi) + 190 * Math.cos((Math.PI / 180) * phi)) / pub.canvas.height;
+		coordinates[i].x = 
+			0.5 + 
+			(140 * Math.cos((Math.PI / 180) * phi) - 
+			 190 * Math.sin((Math.PI / 180) * phi)) 
+			/ pub.canvas.width;
+		coordinates[i].y = 
+			0.5 + 
+			(140 * Math.sin((Math.PI / 180) * phi) + 
+			 190 * Math.cos((Math.PI / 180) * phi)) 
+			/ pub.canvas.height;
 	}
 
 	return coordinates;
@@ -431,72 +564,83 @@ function init() {
 	pub.hctx = pub.hcanvas.getContext('2d');
 
 	// Generate the glows.
-	var starSizes = [1, 3, 5, 6];
 	pub.starGlows = []
-	for (var i = 0; i < starSizes.length; i++) {
-		pub.hcanvas.width = starSizes[i] * 6.5 * 2;
-		pub.hcanvas.height = starSizes[i] * 6.5 * 2;
-		pub.hctx.canvas.width = starSizes[i] * 6.5 * 2;
-		pub.hctx.canvas.height = starSizes[i] * 6.5 * 2;
+	for (var i = 0; i < pub.starSizes.length; i++) {
+		pub.hcanvas.width = pub.starSizes[i] * pub.mainGlowModifier * 2;
+		pub.hcanvas.height = pub.starSizes[i] * pub.mainGlowModifier * 2;
+		pub.hctx.canvas.width = pub.starSizes[i] * pub.mainGlowModifier * 2;
+		pub.hctx.canvas.height = pub.starSizes[i] * pub.mainGlowModifier * 2;
 		pub.hcanvas.style.background = 'transparent';
 
-		pub.starGlows[starSizes[i]] = {};
+		pub.starGlows[pub.starSizes[i]] = {};
 
 		var sgColor = '#222';
 		var glow = pub.hctx.createRadialGradient(
-			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], 
-			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5);
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, pub.starSizes[i], 
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, pub.starSizes[i] * pub.mainGlowModifier);
 		glow.addColorStop(0, sgColor);
 		glow.addColorStop(1, 'transparent');
 		pub.hctx.fillStyle = glow;
 		pub.hctx.beginPath();
-		pub.hctx.arc(0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5, 0, Math.PI * 2, true);
+		pub.hctx.arc(
+			0.5 * pub.hctx.canvas.width, 
+			0.5 * pub.hctx.canvas.height, 
+			pub.starSizes[i] * pub.mainGlowModifier, 
+			0, Math.PI * 2, true);
+
 		pub.hctx.closePath();
 		pub.hctx.fill();
-
 		var img = new Image();
 		img.src = pub.hcanvas.toDataURL();
-		pub.starGlows[starSizes[i]].main = img;
+		pub.starGlows[pub.starSizes[i]].main = img;
 
 		pub.hctx.canvas.width = pub.hctx.canvas.width;
 		
 		sgColor = '#f00';
 		glow = pub.hctx.createRadialGradient(
-			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], 
-			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5);
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, pub.starSizes[i], 
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, pub.starSizes[i] * pub.mainGlowModifier);
 		glow.addColorStop(0, sgColor);
 		glow.addColorStop(1, 'transparent');
 		pub.hctx.fillStyle = glow;
 		pub.hctx.beginPath();
-		pub.hctx.arc(0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i] * 6.5, 0, Math.PI * 2, true);
+		pub.hctx.arc(
+			0.5 * pub.hctx.canvas.width, 
+			0.5 * pub.hctx.canvas.height, 
+			pub.starSizes[i] * pub.mainGlowModifier, 
+			0, Math.PI * 2, true);
 		pub.hctx.closePath();
 		pub.hctx.fill();
 
 		img = new Image();
 		img.src = pub.hcanvas.toDataURL();
-		pub.starGlows[starSizes[i]].selected = img;
+		pub.starGlows[pub.starSizes[i]].selected = img;
 
-		pub.hcanvas.width = starSizes[i] * 1.8 * 2;
-		pub.hcanvas.height = starSizes[i] * 1.8 * 2;
-		pub.hctx.canvas.width = starSizes[i] * 1.8 * 2;
-		pub.hctx.canvas.height = starSizes[i] * 1.8 * 2;
+		pub.hcanvas.width = pub.starSizes[i] * pub.blinkGlowModifier * 2;
+		pub.hcanvas.height = pub.starSizes[i] * pub.blinkGlowModifier * 2;
+		pub.hctx.canvas.width = pub.starSizes[i] * pub.blinkGlowModifier * 2;
+		pub.hctx.canvas.height = pub.starSizes[i] * pub.blinkGlowModifier * 2;
 		pub.hcanvas.style.background = 'transparent';
 
-		var o = 1.8 * starSizes[i];
+		var o = pub.blinkGlowModifier * pub.starSizes[i];
 		glow = pub.hctx.createRadialGradient(
-			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], 
-			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], o);
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, pub.starSizes[i], 
+			0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, pub.starSizes[i], o);
 		glow.addColorStop(0, '#000');
 		glow.addColorStop(1, '#000');
 		pub.hctx.fillStyle = glow;
 		pub.hctx.beginPath();
-		pub.hctx.arc(0.5 * pub.hctx.canvas.width, 0.5 * pub.hctx.canvas.height, starSizes[i], o, 0, Math.PI * 2, true);
+		pub.hctx.arc(
+			0.5 * pub.hctx.canvas.width, 
+			0.5 * pub.hctx.canvas.height, 
+			pub.starSizes[i], o, 
+			0, Math.PI * 2, true);
 		pub.hctx.closePath();
 		pub.hctx.fill();
 
 		img = new Image();
 		img.src = pub.hcanvas.toDataURL();
-		pub.starGlows[starSizes[i]].blink = img;
+		pub.starGlows[pub.starSizes[i]].blink = img;
 	}
 	pub.hctx.canvas.width = pub.hctx.canvas.height = 1;
 
@@ -542,7 +686,8 @@ function init() {
 
 		pub.mouseDown = !pub.mouseDown;
 
-		bodyClicks();
+		starsClick();
+		orbitsClick();
 	};
 
 	// Key up handler.
@@ -556,14 +701,17 @@ function init() {
 			pub.clickedBody = -1;
 			pub.starsResetDone = false;
 			pub.orbitsPhi = [];
+			pub.orbitCoords = [];
 		}
 	}
 
+	generator(30);
+
 	// The original star coordinates. Used to reset the system.
-	pub.origCoords = generateStarCoords(30);
+	pub.origCoords = generateStarCoords(pub.tags.length);
 
 	// The circle position start coordinates.
-	pub.circleCoords = generateCircleCoords(30 - 1);
+	pub.circleCoords = generateCircleCoords(pub.tags.length - 1);
 
 	// The real star coordinates. We copy the original -
 	// coordinates to start with.
