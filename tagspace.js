@@ -176,6 +176,7 @@ function drawOrbits() {
 			pub.ctx.fill(); 
 		}
 
+		// Put labels on top of the orbit bodies.
 		for (var i = 1; i <= orbits; i++) {
 			var orbitLabel = articles[i - 1].name;
 			
@@ -287,7 +288,7 @@ function orbitsClick() {
 }
 
 /**
- * Check if an orbit is hovered.
+ * Checks if an orbit is hovered.
  */
 function orbitsHover() {
 	var hover = false;
@@ -539,7 +540,7 @@ function generateCircleCoords(tagCountM1) {
 }
 
 /**
- * Initialize everything and then start rendering.
+ * Initializes everything and then starts rendering.
  */
 function init() {
 	// Frames per second stats.
