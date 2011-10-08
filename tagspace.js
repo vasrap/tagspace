@@ -149,7 +149,6 @@ function drawOrbits() {
 				else pub.orbitsPhi[i] = 
 					pub.orbitsPhi[i - 1] + ((360 / orbits) * i - (360 / orbits)) + (Math.random() * 100);
 			}
-			
 
 			if (! pub.orbitCoords[i])
 				pub.orbitCoords[i] = {};
